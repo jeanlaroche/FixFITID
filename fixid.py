@@ -40,7 +40,7 @@ def run(args):
     for origID,newID in zip(oldIDs,newIDS):
         if args.verbose:
             print(f"Replacing {origID} with {newID}")
-        data.replace(origID,newID)
+        data = data.replace(origID,newID)
 
     # Write OFX file back
     if args.outputOfxFile is None:
