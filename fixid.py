@@ -8,8 +8,10 @@ def run(args):
     with open(args.ofxFile) as f:
         data = f.read()
 
-    if args.cutoffDate:
-        cutoffDate = datetime.datetime.strptime(args.cutoffDate, "%m/%d/%Y")
+    if args.cutoffDateBefore:
+        cutoffDateBefore = datetime.datetime.strptime(args.cutoffDateBefore, "%m/%d/%Y")
+    if args.cutoffDateAfter:
+        cutoffDateAfter = datetime.datetime.strptime(args.cutoffDateAfter, "%m/%d/%Y")
     # A very basic parsing, looking for STMTTRN
     allTrans = re.findall('(?s)(<STMTTRN>.*?</STMTTRN>)',data)
 
@@ -29,10 +31,14 @@ def run(args):
         if not len(FITID):
             print(f"Found transaction with no FITID {DTPOSTED=} {NAME=} {TRNAMT=}")
             continue
-        if len(DTPOSTED) and args.cutoffDate:
+        if len(DTPOSTED) and (args.cutoffDateBefore or args.cutoffDateAfter):
             transDate = datetime.datetime.strptime(DTPOSTED[0][0:8], "%Y%m%d")
-            if transDate < cutoffDate:
+            if args.cutoffDateBefore and transDate < cutoffDateBefore:
                 if args.verbose: print(f"Removing transaction {FITID[0]} as it is before cutoff date")
+                transToRemove.append(trans)
+                continue
+            if args.cutoffDateAfter and transDate > cutoffDateAfter:
+                if args.verbose: print(f"Removing transaction {FITID[0]} as it is after cutoff date")
                 transToRemove.append(trans)
                 continue
         # Create a new FITID based on all the transaction info.
@@ -76,7 +82,8 @@ if __name__ == '__main__':
     parser.add_argument('-o', dest='outputOfxFile', help='Output ofx file, if not provided, modify in-place', default=None)
     parser.add_argument('-y', dest='alwaysYes', help='Overwrite with no confirmation',action='store_true')
     parser.add_argument('-v', dest='verbose', help='Be verbose',action='store_true')
-    parser.add_argument('-c', dest='cutoffDate', help='Cutoff date, transactions before that date are removed. Format: 1/5/2022 for jan. 5, 2022')
+    parser.add_argument('-c', dest='cutoffDateBefore', help='Cutoff date, transactions strictly before that date are removed. Format: 1/5/2022 for jan. 5, 2022')
+    parser.add_argument('-C', dest='cutoffDateAfter', help='Cutoff date, transactions strictly after that date are removed. Format: 1/5/2022 for jan. 5, 2022')
     args = parser.parse_args()
     run(args)
 
